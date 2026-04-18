@@ -1128,8 +1128,18 @@ function openVehPdfTab() {
 
 function handleVehPdf(file) {
   if (!file || !curVeh) return;
-  if (!canEdit(CU.role)) { toast('No upload permission'); return; }
-  if (file.type !== 'application/pdf') { toast('Please select a PDF file'); return; }
+  if (!canEdit(CU.role)) { 
+    toast('No upload permission'); 
+    document.getElementById('fi-veh-pdf').value = '';
+    return; 
+  }
+  
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  if (!isPdf) { 
+    toast('Please select a PDF file'); 
+    document.getElementById('fi-veh-pdf').value = '';
+    return; 
+  }
   
   const rd = new FileReader();
   rd.onload = function(e) {
