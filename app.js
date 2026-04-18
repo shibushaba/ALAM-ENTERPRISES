@@ -56,8 +56,8 @@ function doLogin() {
 
 function doLogout() {
   CU = null;
-  if (fbUnsubscribe) { fbUnsubscribe(); fbUnsubscribe = null; }
-  if (fbPdfUnsubscribe) { fbPdfUnsubscribe(); fbPdfUnsubscribe = null; }
+  if (fbUnsubscribe) { window.supabase.removeChannel(fbUnsubscribe); fbUnsubscribe = null; }
+  if (fbPdfUnsubscribe) { window.supabase.removeChannel(fbPdfUnsubscribe); fbPdfUnsubscribe = null; }
   
   document.getElementById('pg-login').style.display = 'flex';
   document.getElementById('pg-app').style.display = 'none';
@@ -67,7 +67,7 @@ function doLogout() {
 }
 
 // ─────────────────────────────────────────────────────
-//  FIREBASE SYNC
+//  SUPABASE SYNC
 // ─────────────────────────────────────────────────────
 let fbReady = false;
 let fbUnsubscribe = null;
@@ -75,7 +75,7 @@ let fbPdfUnsubscribe = null;
 let isSyncing = false;
 
 function waitForFirebase(cb) {
-  if (window._firebaseReady && window._fbDb) {
+  if (window._supabaseReady && window.supabase) {
     fbReady = true;
     cb();
     return;
@@ -84,8 +84,8 @@ function waitForFirebase(cb) {
   let called = false;
   const run = () => { if (!called) { called = true; fbReady = true; cb(); } };
   window._fbReadyResolvers.push(run);
-  document.addEventListener('firebase-ready', function once() {
-    document.removeEventListener('firebase-ready', once);
+  document.addEventListener('supabase-ready', function once() {
+    document.removeEventListener('supabase-ready', once);
     run();
   });
 }
@@ -107,21 +107,24 @@ function setFbStatus(state) {
 }
 
 async function fbSave() {
-  if (!fbReady || !window._fbDb || !curY || !curM) {
+  if (!fbReady || !window.supabase || !curY || !curM) {
     return fbSaveAll();
   }
   try {
     isSyncing = true;
     setSyncStatus('syncing');
-    const path = 'alam_enterprises/data/' + curY + '/' + curM;
-    const dbRef = window._fbRef(window._fbDb, path);
-    const data = DB[curY] && DB[curY][curM] ? DB[curY][curM] : null;
-    if (data) {
-      await window._fbSet(dbRef, data);
-    }
+    
+    const toSave = {};
+    Object.keys(DB).forEach(y => {
+      toSave[y] = {};
+      MONTHS.forEach(m => { if (DB[y][m]) toSave[y][m] = DB[y][m]; });
+    });
+    
+    await window.supabase.from('app_data').upsert({ id: 'ledger', data: toSave });
+    
     setSyncStatus('synced', 'Synced ✓');
   } catch (e) {
-    console.warn('Firebase save error:', e);
+    console.warn('Supabase save error:', e);
     setSyncStatus('error', 'Save failed');
   } finally {
     isSyncing = false;
@@ -129,70 +132,86 @@ async function fbSave() {
 }
 
 async function fbSaveAll() {
-  if (!fbReady || !window._fbDb) return;
+  if (!fbReady || !window.supabase) return;
   try {
     isSyncing = true;
     setSyncStatus('syncing');
-    const dbRef = window._fbRef(window._fbDb, 'alam_enterprises/data');
+    
     const toSave = {};
     Object.keys(DB).forEach(y => {
       toSave[y] = {};
       MONTHS.forEach(m => { if (DB[y][m]) toSave[y][m] = DB[y][m]; });
     });
-    await window._fbSet(dbRef, toSave);
+    
+    await window.supabase.from('app_data').upsert({ id: 'ledger', data: toSave });
+    
     setSyncStatus('synced', 'Synced ✓');
   } catch (e) {
-    console.warn('Firebase save error:', e);
+    console.warn('Supabase save error:', e);
     setSyncStatus('error', 'Save failed');
   } finally {
     isSyncing = false;
   }
 }
 
-function fbSubscribe() {
-  if (!fbReady || !window._fbDb) return;
-  const dbRef = window._fbRef(window._fbDb, 'alam_enterprises/data');
-  fbUnsubscribe = window._fbOnValue(dbRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      Object.keys(data).forEach(y => {
-        ensureY(parseInt(y));
-        MONTHS.forEach(m => {
-          if (data[y] && data[y][m]) {
-            DB[y][m] = data[y][m];
-          }
-        });
+function _processIncomingData(data) {
+  if (data) {
+    Object.keys(data).forEach(y => {
+      ensureY(parseInt(y));
+      MONTHS.forEach(m => {
+        if (data[y] && data[y][m]) {
+          DB[y][m] = data[y][m];
+        }
       });
-      if (CU) {
-        renderDash();
-        renderYears();
-        renderSB();
-        if (curY) renderMonths(curY);
-        if (curY && curM && DB[curY] && DB[curY][curM] && !isSyncing) {
-          const remoteHdr = DB[curY][curM].headers || [];
-          const remoteRows = (DB[curY][curM].rows || []).map(r => [...r]);
-          const changed = JSON.stringify(remoteHdr) !== JSON.stringify(shHdr) ||
-            JSON.stringify(remoteRows) !== JSON.stringify(shRows);
-          if (changed) {
-            shHdr = remoteHdr;
-            shRows = remoteRows;
-            if (shRows.length) { showTbl(); renderSh(); renderCharts(); renderVehNav(); }
-          }
+    });
+    if (CU) {
+      renderDash();
+      renderYears();
+      renderSB();
+      if (curY) renderMonths(curY);
+      if (curY && curM && DB[curY] && DB[curY][curM] && !isSyncing) {
+        const remoteHdr = DB[curY][curM].headers || [];
+        const remoteRows = (DB[curY][curM].rows || []).map(r => [...r]);
+        const changed = JSON.stringify(remoteHdr) !== JSON.stringify(shHdr) ||
+          JSON.stringify(remoteRows) !== JSON.stringify(shRows);
+        if (changed) {
+          shHdr = remoteHdr;
+          shRows = remoteRows;
+          if (shRows.length) { showTbl(); renderSh(); renderCharts(); renderVehNav(); }
         }
       }
-      setSyncStatus('synced', 'Synced ✓');
-    } else {
-      setSyncStatus('syncing', 'Initialising cloud…');
-      fbSaveAll().then(() => {
-        setSyncStatus('synced', 'Synced ✓');
-        if (CU) { renderDash(); renderYears(); renderSB(); }
-      });
     }
-  }, (err) => {
-    console.warn('Firebase listen error:', err);
-    setSyncStatus('error', 'Offline — changes saved locally');
-    setFbStatus('offline');
+    setSyncStatus('synced', 'Synced ✓');
+  } else {
+    setSyncStatus('syncing', 'Initialising cloud…');
+    fbSaveAll().then(() => {
+      setSyncStatus('synced', 'Synced ✓');
+      if (CU) { renderDash(); renderYears(); renderSB(); }
+    });
+  }
+}
+
+function fbSubscribe() {
+  if (!fbReady || !window.supabase) return;
+  
+  // Initial fetch
+  window.supabase.from('app_data').select('data').eq('id', 'ledger').single().then(({ data: row, error }) => {
+    if (!error && row) {
+      _processIncomingData(row.data);
+    } else if (error && (error.code === 'PGRST116' || error.message.includes('No rows'))) { 
+      _processIncomingData(null);
+    } else {
+      setSyncStatus('error', 'Offline — changes saved locally');
+      setFbStatus('offline');
+    }
   });
+
+  // Subscribe to changes
+  fbUnsubscribe = window.supabase.channel('public:app_data:ledger')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data', filter: 'id=eq.ledger' }, payload => {
+      _processIncomingData(payload.new.data);
+    })
+    .subscribe();
 }
 
 // ─────────────────────────────────────────────────────
@@ -1185,25 +1204,49 @@ function removeVehPdf() {
 }
 
 // ─────────────────────────────────────────────────────
-//  PDF FIREBASE SYNC
+//  PDF SUPABASE SYNC
 // ─────────────────────────────────────────────────────
 async function fbSavePdf(key, pdfObj) {
-  if (!fbReady || !window._fbStor) {
+  if (!fbReady || !window.supabase) {
     toast('PDF saved locally (cloud not ready)');
     return;
   }
   
   try {
     setSyncStatus('syncing', 'Uploading PDF…');
-    const storRef = window._fbSRef(window._fbStor, `alam_enterprises/pdfs/${key}`);
-    await window._fbUploadStr(storRef, pdfObj.dataUrl, 'data_url', { contentType: 'application/pdf' });
-    const url = await window._fbGetDlUrl(storRef);
+    // Extract base64 part
+    const base64Data = pdfObj.dataUrl.split(',')[1];
+    let fileBuffer;
+    try {
+      const bin = atob(base64Data);
+      const buf = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      fileBuffer = buf;
+    } catch(e) {
+      throw new Error('Failed to parse PDF data');
+    }
+
+    // Upload to Supabase Storage Bucket 'pdfs'
+    const fileName = `alam_enterprises/pdfs/${key}.pdf`;
+    const { error: uploadError } = await window.supabase.storage
+      .from('pdfs')
+      .upload(fileName, fileBuffer, {
+        contentType: 'application/pdf',
+        upsert: true
+      });
+      
+    if (uploadError) throw uploadError;
+
+    // Get public URL
+    const { data: publicUrlData } = window.supabase.storage.from('pdfs').getPublicUrl(fileName);
+    const url = publicUrlData.publicUrl;
     
     const meta = { name: pdfObj.name, vehicle: pdfObj.vehicle, url };
-    const dbRef = window._fbRef(window._fbDb, `alam_enterprises/pdf_meta/${key}`);
-    await window._fbSet(dbRef, meta);
-    
     pdfStore[key] = { ...meta, dataUrl: pdfObj.dataUrl };
+    
+    // Persist meta to database
+    await fbSavePdfMeta();
+    
     setSyncStatus('synced', 'PDF Synced ✓');
     toast('PDF uploaded & synced ✓');
   } catch (e) {
@@ -1213,37 +1256,57 @@ async function fbSavePdf(key, pdfObj) {
   }
 }
 
+async function fbSavePdfMeta() {
+  if (!fbReady || !window.supabase) return;
+  // Make a clean copy without dataUrl payload
+  const metaOnly = {};
+  Object.keys(pdfStore).forEach(k => {
+    metaOnly[k] = { name: pdfStore[k].name, vehicle: pdfStore[k].vehicle, url: pdfStore[k].url };
+  });
+  await window.supabase.from('app_data').upsert({ id: 'pdf_meta', data: metaOnly });
+}
+
 async function fbRemovePdf(key) {
-  if (!fbReady) return;
+  if (!fbReady || !window.supabase) return;
   try {
-    if (window._fbStor) {
-      try {
-        const storRef = window._fbSRef(window._fbStor, `alam_enterprises/pdfs/${key}`);
-        await window._fbDelObj(storRef);
-      } catch (_) {}
-    }
-    const dbRef = window._fbRef(window._fbDb, `alam_enterprises/pdf_meta/${key}`);
-    await window._fbRemove(dbRef);
+    const fileName = `alam_enterprises/pdfs/${key}.pdf`;
+    await window.supabase.storage.from('pdfs').remove([fileName]);
+    await fbSavePdfMeta();
   } catch (e) {
     console.warn('PDF remove error:', e);
   }
 }
 
+function _processIncomingPdfMeta(data) {
+  if (data) {
+    Object.keys(data).forEach(k => {
+      const existing = pdfStore[k];
+      pdfStore[k] = { ...data[k], dataUrl: existing ? existing.dataUrl : null };
+    });
+    // Optional cleanup of local keys that were removed
+    Object.keys(pdfStore).forEach(k => {
+      if (!data[k]) delete pdfStore[k];
+    });
+    if (curY && curM) { renderVehNav(); if (curVeh) refreshVehPdfPanel(); }
+  }
+}
+
 function fbSubscribePdfs() {
-  if (!fbReady || !window._fbDb) return;
-  const dbRef = window._fbRef(window._fbDb, 'alam_enterprises/pdf_meta');
-  fbPdfUnsubscribe = window._fbOnValue(dbRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      Object.keys(data).forEach(k => {
-        if (data[k]) {
-          const existing = pdfStore[k];
-          pdfStore[k] = { ...data[k], dataUrl: existing ? existing.dataUrl : null };
-        }
-      });
-      if (curY && curM) { renderVehNav(); if (curVeh) refreshVehPdfPanel(); }
+  if (!fbReady || !window.supabase) return;
+  
+  // Initial fetch
+  window.supabase.from('app_data').select('data').eq('id', 'pdf_meta').single().then(({ data: row, error }) => {
+    if (!error && row && row.data) {
+      _processIncomingPdfMeta(row.data);
     }
-  }, (err) => { console.warn('PDF meta listen error:', err); });
+  });
+
+  // Subscribe to changes
+  fbPdfUnsubscribe = window.supabase.channel('public:app_data:pdf_meta')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data', filter: 'id=eq.pdf_meta' }, payload => {
+      _processIncomingPdfMeta(payload.new.data);
+    })
+    .subscribe();
 }
 
 // ─────────────────────────────────────────────────────
@@ -1548,10 +1611,10 @@ function toast(msg) {
 }
 
 // ─────────────────────────────────────────────────────
-//  FIREBASE OFFLINE FALLBACK
+//  SUPABASE OFFLINE FALLBACK
 // ─────────────────────────────────────────────────────
 setTimeout(() => {
-  if (!fbReady && !window._firebaseReady) {
+  if (!fbReady && !window._supabaseReady) {
     setFbStatus('offline');
     setSyncStatus('error', 'Local only — check internet');
   }
