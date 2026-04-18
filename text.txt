@@ -1,0 +1,5 @@
+alam-enterprises/
+├── index.html          (Main HTML structure)
+├── style.css           (All CSS styles)
+├── firebase-config.js  (Firebase initialization module)
+└── app.js              (Main application logic)
