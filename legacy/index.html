@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Data Ledger System for Alam Enterprises — Transport & Logistics.">
+<meta name="author" content="Alam Enterprises">
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<title>Alam Enterprises — Data Ledger</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Lato:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="pg-login">
+  <div class="lg-road-bg">
+    <div class="stars"></div>
+    <div class="city-silhouette"></div>
+    <div class="vehicle-lane">
+      <div class="vehicle v1"></div>
+      <div class="vehicle v2"></div>
+      <div class="vehicle v3"></div>
+      <div class="vehicle v4"></div>
+    </div>
+  </div>
+  <div class="lg-orb a"></div>
+  <div class="lg-orb b"></div>
+  <div class="lg-orb c"></div>
+
+  <div class="lg-left">
+    <div class="lg-brand">
+      <div class="lg-brand-icon">🚛</div>
+      <div>
+        <div class="lg-brand-name">Alam Enterprises</div>
+        <span class="lg-brand-tag">Transport &amp; Logistics</span>
+      </div>
+    </div>
+    <div class="lg-h">Moving <em>freight</em>,<br>tracking <em>records</em>.</div>
+  </div>
+
+  <div class="lg-right">
+    <div class="lgf">
+      <div class="lgf-company">
+        <div class="lgf-company-name">ALAM ENTERPRISES</div>
+        <span class="lgf-company-sub">Data Ledger System</span>
+      </div>
+      <div class="lgf-title">Welcome back</div>
+      <div class="lgf-sub">Sign in to continue</div>
+      <div class="fl">
+        <label>Select Role</label>
+        <div class="role-grid" id="rg">
+          <div class="role-btn active" onclick="selRole('admin',this)">👑 Admin</div>
+          <div class="role-btn" onclick="selRole('viewer',this)">👁 Viewer</div>
+        </div>
+      </div>
+      <div class="fl">
+        <label>Username</label>
+        <input class="fi" type="text" id="l-em" placeholder="Enter username" autocomplete="username">
+      </div>
+      <div class="fl">
+        <label>Password</label>
+        <input class="fi" type="password" id="l-pw" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password">
+      </div>
+      <button class="btn-login" onclick="doLogin()">Sign In →</button>
+      <div class="lg-err" id="l-err">⚠ Invalid username or password</div>
+
+      <div class="fb-status" id="fb-status">
+        <div class="fb-dot connecting" id="fb-dot"></div>
+        <span id="fb-status-text">Connecting to cloud…</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="pg-app">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="mob-menu-btn" onclick="toggleSidebar()" id="mob-menu">☰</div>
+      <div class="tb-logo" onclick="goYears()">
+        <div class="icon">🚛</div>
+        <span>Alam Enterprises</span>
+      </div>
+      <div class="tb-sep"></div>
+      <div class="bc" id="bc"></div>
+    </div>
+    <div class="tb-right">
+      <div class="sync-badge syncing" id="sync-badge">
+        <div class="sync-dot"></div>
+        <span id="sync-text">Sync…</span>
+      </div>
+      <span class="rb" id="top-rb">admin</span>
+      <div class="user-chip"><div class="uc-av" id="top-av">RK</div><span id="top-nm">RKR</span></div>
+      <button class="btn-logout" onclick="doLogout()">↩ Out</button>
+    </div>
+  </div>
+
+  <div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+  <div class="app-body">
+    <div class="sidebar" id="sidebar">
+      <div class="sb-sec">Menu</div>
+      <div class="sb-item on" onclick="goYears();closeSidebar()"><span class="si">🏠</span>Dashboard</div>
+      <div class="sb-item" onclick="goYears();closeSidebar()"><span class="si">📅</span>All Years</div>
+      <div class="sb-sec" style="margin-top:.75rem">Years</div>
+      <div class="sb-yr-list" id="sb-yrs"></div>
+      <div class="sb-sec-vehicles" id="sb-vehs-sec" style="margin-top:.75rem;display:none"><span>🚛 Vehicles</span></div>
+      <div class="sb-veh-list" id="sb-vehs"></div>
+      <div class="sb-foot">
+        <div class="sb-usr">
+          <div class="sb-av" id="sb-av">RK</div>
+          <div><div class="sb-un" id="sb-un">RKR</div><div class="sb-ur" id="sb-ur">Administrator</div></div>
+        </div>
+        <button class="sb-lo" onclick="doLogout()">↩ Sign Out</button>
+      </div>
+    </div>
+
+    <div class="main">
+      <!-- YEARS VIEW -->
+      <div class="view on" id="v-years">
+        <div class="ph"><h1>🚛 Data Workspace</h1><p>Select a year to browse monthly records</p></div>
+        <div class="stats-row" id="dash-stats"></div>
+        <div class="years-grid" id="years-grid"></div>
+      </div>
+
+      <!-- MONTHS VIEW -->
+      <div class="view" id="v-months">
+        <div class="ph"><h1 id="m-h1">2025</h1><p>Select a month to view records</p></div>
+        <div class="stats-row" id="mo-stats"></div>
+        <div class="months-grid" id="months-grid"></div>
+      </div>
+
+      <!-- VEHICLE ANALYTICS VIEW -->
+      <div class="view" id="v-vehicle">
+        <div id="veh-analytics-content"></div>
+      </div>
+
+      <!-- SHEET VIEW -->
+      <div class="view" id="v-sheet">
+        <div class="ph"><h1 id="s-h1">January 2025</h1><p id="s-sub">Click any cell to edit · Viewer role is read-only</p></div>
+        <div class="viewer-bar" id="vbar">⚠ You have <strong style="margin:0 .2rem">Viewer</strong> access — editing is disabled.</div>
+
+        <div id="upload-area">
+          <div class="upload-zone" id="dz" onclick="document.getElementById('fi1').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="handleDrop(event)">
+            <input type="file" id="fi1" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this.files[0])">
+            <div class="uz-icon">📂</div>
+            <div class="uz-title">Upload Excel or CSV file</div>
+            <div class="uz-sub">Drag &amp; drop .xlsx, .xls, .csv — or click to browse</div>
+          </div>
+          <div class="uz-or">— or —</div>
+          <div class="uz-sample-row"><button class="btn btn-p" onclick="loadSample()">✦ Load Sample Data</button></div>
+        </div>
+
+        <div id="tbl-area" style="display:none" class="sheet-wrap">
+          <div class="toolbar">
+            <div class="tbl">
+              <div class="sw"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="s-srch" placeholder="Search…" oninput="filterSh()"></div>
+              <button class="btn btn-g" id="btn-add" onclick="openMod()">＋ Add Row</button>
+              <button class="btn btn-s" onclick="sortSh()">⇅ Sort</button>
+              <label class="btn btn-a">↑ Replace File<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this.files[0])"></label>
+            </div>
+            <div class="tbr">
+              <button class="btn btn-s" onclick="expXLSX()">⬇ Excel</button>
+              <button class="btn btn-s" onclick="expCSV()">⬇ CSV</button>
+              <button class="btn btn-d" id="btn-del" style="display:none" onclick="delSel()">✕ Delete</button>
+            </div>
+          </div>
+
+          <div class="tbl-wrap">
+            <div class="tbl-scroll">
+              <table><thead id="s-thead"></thead><tbody id="s-tbody"></tbody></table>
+            </div>
+            <div class="tbl-foot">
+              <div class="tf-info" id="s-info">0 rows</div>
+              <div class="pag" id="s-pag"></div>
+            </div>
+          </div>
+
+          <!-- VEHICLE PDF SECTION -->
+          <div class="veh-pdf-section" id="veh-pdf-section">
+            <div class="veh-pdf-header">
+              <div class="veh-pdf-title">🚛 Vehicle Documents</div>
+              <div style="display:flex;align-items:center;gap:.65rem;flex-wrap:wrap">
+                <div class="veh-pdf-sub" id="veh-pdf-sub">Click a vehicle to view its PDF</div>
+                <button class="btn-add-veh" id="btn-add-veh" onclick="addManualVehicle()">＋ Add Vehicle</button>
+              </div>
+            </div>
+            <div class="veh-nav" id="veh-nav"></div>
+            <div id="veh-pdf-panel" style="display:none" class="veh-pdf-panel">
+              <div class="veh-pdf-panel-header">
+                <div class="veh-pdf-panel-meta">
+                  <span class="pdf-badge">PDF</span>
+                  <span class="veh-pdf-vname" id="veh-pdf-vname">—</span>
+                  <span class="veh-pdf-fname" id="veh-pdf-fname">No PDF</span>
+                </div>
+                <div class="veh-pdf-panel-actions">
+                  <label class="btn btn-a" id="btn-veh-upload-wrap">📤 Upload PDF<input type="file" id="fi-veh-pdf" accept=".pdf" style="display:none" onchange="handleVehPdf(this.files[0])"></label>
+                  <button class="btn btn-s" onclick="showUrlInput()" id="btn-url-input" title="Set PDF via URL">🔗 Set URL</button>
+                  <button class="btn btn-d" id="btn-veh-rm" onclick="removeVehPdf()" style="display:none">✕ Remove</button>
+                  <button class="btn btn-s" onclick="closeVehPdfPanel()">✕ Close</button>
+                </div>
+              </div>
+              <div id="veh-pdf-body">
+                <div id="pdf-url-bar" class="pdf-url-bar" style="display:none">
+                  <span class="pdf-url-label">PDF URL</span>
+                  <input class="pdf-url-inp" id="pdf-url-inp" type="url" placeholder="Paste PDF link (Google Drive, Dropbox, etc.)…" onkeydown="if(event.key==='Enter')setPdfUrl()">
+                  <button class="pdf-url-set" onclick="setPdfUrl()">Set URL</button>
+                  <button class="btn btn-s" style="font-size:.72rem" onclick="document.getElementById('pdf-url-bar').style.display='none'">Cancel</button>
+                </div>
+                <div id="pdf-action-bar" class="pdf-action-bar" style="display:none">
+                  <button class="pdf-action-big open" onclick="openVehPdfTab()">🔗 Open PDF</button>
+                  <button class="pdf-action-big dl" onclick="downloadVehPdf()">⬇ Download PDF</button>
+                </div>
+                <div id="veh-pdf-empty" style="text-align:center;padding:3rem 2rem;color:var(--ink3)">
+                  <div style="font-size:2.5rem;margin-bottom:.65rem">📄</div>
+                  <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:.3rem">No PDF for this vehicle</div>
+                  <div style="font-size:.82rem" id="veh-pdf-hint">Click <strong>Upload PDF</strong> above to attach a PDF to this vehicle</div>
+                </div>
+                <div id="veh-pdf-viewer" style="display:none">
+                  <div id="pdf-loading" style="display:none;text-align:center;padding:2rem;color:var(--ink3)">
+                    <div style="font-size:1.8rem;margin-bottom:.5rem">⏳</div>
+                    <div style="font-size:.85rem;font-weight:600">Loading PDF…</div>
+                  </div>
+                  <div id="pdf-controls" style="display:none;align-items:center;justify-content:space-between;padding:.55rem 1rem;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.4rem">
+                    <div style="display:flex;align-items:center;gap:.4rem">
+                      <button class="btn btn-s" onclick="pdfPrevPage()">◀ Prev</button>
+                      <span id="pdf-page-info" style="font-size:.8rem;font-family:'JetBrains Mono',monospace;color:var(--ink2);min-width:70px;text-align:center">1 / 1</span>
+                      <button class="btn btn-s" onclick="pdfNextPage()">Next ▶</button>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:.4rem">
+                      <button class="btn btn-s" onclick="pdfZoomOut()">− Zoom</button>
+                      <span id="pdf-zoom-info" style="font-size:.78rem;color:var(--ink3);min-width:42px;text-align:center">100%</span>
+                      <button class="btn btn-s" onclick="pdfZoomIn()">+ Zoom</button>
+                    </div>
+                  </div>
+                  <div id="pdf-canvas-wrap" style="overflow:auto;background:#525659;display:none;max-height:520px;text-align:center;padding:12px 0">
+                    <canvas id="pdf-canvas" style="display:block;margin:0 auto;box-shadow:0 2px 12px rgba(0,0,0,.4)"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-sec">
+            <div class="ch-title">📊 Charts <span>Auto-generated · Updates live when you edit data</span></div>
+            <div class="ch-grid">
+              <div class="ch-card"><div class="ch-label">Total Fare vs Expenses per Vehicle</div><div class="ch-wrap"><canvas id="ch-bar"></canvas></div></div>
+              <div class="ch-card"><div class="ch-label">P&amp;L Summary</div><div class="ch-wrap"><canvas id="ch-pie"></canvas></div></div>
+              <div class="ch-card"><div class="ch-label">Fare · Expenses · Profit Trend</div><div class="ch-wrap"><canvas id="ch-line"></canvas></div></div>
+              <div class="ch-card"><div class="ch-label">Top Vehicles by Fare</div><div class="ch-wrap"><canvas id="ch-hbar"></canvas></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="mb" id="add-mb">
+  <div class="modal">
+    <div class="mod-title">Add New Row</div>
+    <div class="mg" id="mod-flds"></div>
+    <div class="mod-foot">
+      <button class="btn btn-s" onclick="closeMod()">Cancel</button>
+      <button class="btn btn-p" onclick="saveMod()">Save Row</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="td"></div><span id="t-msg">Saved</span></div>
+
+<!-- External Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<!-- Supabase Module -->
+<script type="module" src="supabase-config.js"></script>
+
+<!-- Main Application -->
+<script src="app.js"></script>
+</body>
+</html>
