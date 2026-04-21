@@ -61,11 +61,13 @@ export const AppProvider = ({ children }) => {
         });
       }
       const { data: pdfData } = await supabase.from('app_data').select('data').eq('id', 'pdf_meta').maybeSingle();
-      if (pdfData?.data) {
+      if (pdfData && pdfData.data && typeof pdfData.data === 'object') {
         setPdfStore(prev => {
           const next = { ...prev };
           Object.keys(pdfData.data).forEach(k => {
-            next[k] = { ...pdfData.data[k], dataUrl: next[k]?.dataUrl || null };
+            if (pdfData.data[k]) {
+              next[k] = { ...pdfData.data[k], dataUrl: next[k]?.dataUrl || null };
+            }
           });
           return next;
         });
@@ -97,15 +99,15 @@ export const AppProvider = ({ children }) => {
 
     const pdfSub = supabase.channel('public:app_data:pdf_meta')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data', filter: 'id=eq.pdf_meta' }, payload => {
-        const newData = payload.new.data;
-        if (newData) {
+        const newData = payload.new?.data;
+        if (newData && typeof newData === 'object') {
           setPdfStore(prev => {
             const next = { ...prev };
-            // Update known
             Object.keys(newData).forEach(k => {
-              next[k] = { ...newData[k], dataUrl: next[k]?.dataUrl || null };
+              if (newData[k]) {
+                next[k] = { ...newData[k], dataUrl: next[k]?.dataUrl || null };
+              }
             });
-            // Delete removed
             Object.keys(next).forEach(k => {
               if (!newData[k]) delete next[k];
             });
