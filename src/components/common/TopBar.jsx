@@ -1,7 +1,7 @@
 import { useAppContext } from '../../context/AppContext';
 
 export default function TopBar() {
-  const { currentUser, logout, syncStatus, goYears, curY, curM, goMonths, view } = useAppContext();
+  const { currentUser, logout, syncStatus, goYears, curY, curM, goMonths, view, setIsMobileOpen } = useAppContext();
 
   // Create breadcrumb items
   const parts = [{ l: 'Years', f: goYears }];
@@ -15,7 +15,10 @@ export default function TopBar() {
   return (
     <div className="h-[54px] bg-surface border-b border-border flex items-center justify-between px-[1rem] sticky top-0 z-[100] shadow-sh">
       <div className="flex items-center gap-[0.65rem] overflow-hidden min-w-0">
-        <div className="hidden max-md:flex w-[36px] h-[36px] items-center justify-center bg-surface2 border border-border rounded-[8px] cursor-pointer text-[1rem] text-ink2 shrink-0">
+        <div 
+          className="hidden max-md:flex w-[36px] h-[36px] items-center justify-center bg-surface2 border border-border rounded-[8px] cursor-pointer text-[1rem] text-ink2 shrink-0"
+          onClick={() => setIsMobileOpen(true)}
+        >
           ☰
         </div>
         <div className="flex items-center gap-[0.45rem] cursor-pointer shrink-0" onClick={goYears}>

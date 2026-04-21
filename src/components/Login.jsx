@@ -61,7 +61,6 @@ export default function Login() {
           </div>
           <div className="font-syne text-[1.25rem] font-[700] text-white mb-[0.25rem]">Welcome back</div>
           <div className="text-white/40 text-[0.82rem] mb-[1.75rem]">Sign in to continue</div>
-          
           <div className="mb-[1.1rem]">
             <label className="block text-[0.68rem] font-[700] uppercase tracking-[0.1em] text-white/40 mb-[0.45rem]">Select Role</label>
             <div className="grid grid-cols-2 gap-[0.5rem]">

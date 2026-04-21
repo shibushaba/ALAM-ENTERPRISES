@@ -1,7 +1,7 @@
 import { useAppContext } from '../../context/AppContext';
 
 export default function Sidebar() {
-  const { db, view, curY, goMonths, goYears, goVehicle, curVeh, currentUser, logout, monthsList } = useAppContext();
+  const { db, view, curY, goMonths, goYears, goVehicle, curVeh, currentUser, logout, monthsList, isMobileOpen, setIsMobileOpen } = useAppContext();
 
   // Calculate year stats
   const years = Object.keys(db).map(Number).sort((a, b) => b - a);
@@ -25,9 +25,19 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile overlay omitted for layout simplicity, handled via wrapper class if needed */}
-      <div className="w-[210px] shrink-0 bg-ink py-[0.75rem] flex flex-col sticky top-[54px] h-[calc(100vh-54px)] overflow-y-auto max-md:hidden">
-        <div className="px-[1rem] pb-[0.2rem] pt-[0.5rem] text-[0.62rem] font-[700] uppercase tracking-[0.1em] text-white/20 mt-[0.5rem]">Menu</div>
+      {/* Mobile overlay */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-ink/60 backdrop-blur-sm z-[200] max-md:block hidden animate-vIn" 
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+      
+      <div className={`w-[210px] shrink-0 bg-ink py-[0.75rem] flex flex-col h-[calc(100vh-54px)] overflow-y-auto transition-transform duration-300 md:sticky md:top-[54px] max-md:fixed max-md:top-[54px] max-md:bottom-0 max-md:left-0 max-md:z-[201] ${isMobileOpen ? 'max-md:translate-x-0' : 'max-md:-translate-x-full'}`}>
+        <div className="px-[1rem] pb-[0.2rem] pt-[0.5rem] text-[0.62rem] font-[700] uppercase tracking-[0.1em] text-white/20 mt-[0.5rem] flex items-center justify-between">
+          <span>Menu</span>
+          <button className="md:hidden text-white/60 p-1" onClick={() => setIsMobileOpen(false)}>✕</button>
+        </div>
         
         <div 
           className={`flex items-center gap-[0.6rem] py-[0.5rem] px-[1.1rem] cursor-pointer text-[0.82rem] font-[500] transition-all duration-150 border-l-[2px] ${view === 'years' ? 'text-white bg-amber-500/15 border-l-gold' : 'border-l-transparent text-white/45 hover:text-white/80 hover:bg-white/5'}`}
@@ -96,7 +106,7 @@ export default function Sidebar() {
           </div>
           <button 
             className="mt-[0.65rem] w-full p-[0.4rem] bg-white/5 border border-white/10 rounded-[7px] text-white/40 text-[0.72rem] cursor-pointer font-lato transition-all duration-150 hover:bg-red-600/15 hover:text-red-300 hover:border-red-600/20"
-            onClick={logout}
+            onClick={() => { setIsMobileOpen(false); logout(); }}
           >
             ↩ Sign Out
           </button>

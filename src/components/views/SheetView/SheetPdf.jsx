@@ -122,7 +122,7 @@ export default function SheetPdf({ data, curY, curM }) {
           // Save meta
           const metaOnly = {};
           Object.keys(next).forEach(k => metaOnly[k] = { name: next[k].name, vehicle: next[k].vehicle, url: next[k].url });
-          supabase.from('app_data').upsert({ id: 'pdf_meta', data: metaOnly });
+          supabase.from('app_data').upsert({ id: 'pdf_meta', data: metaOnly }).catch(console.error);
           return next;
         });
         toast('PDF Synced ✓');
@@ -145,7 +145,7 @@ export default function SheetPdf({ data, curY, curM }) {
       const next = { ...prev, [key]: finalPdf };
       const metaOnly = {};
       Object.keys(next).forEach(k => metaOnly[k] = { name: next[k].name, vehicle: next[k].vehicle, url: next[k].url });
-      supabase.from('app_data').upsert({ id: 'pdf_meta', data: metaOnly });
+      supabase.from('app_data').upsert({ id: 'pdf_meta', data: metaOnly }).catch(console.error);
       return next;
     });
     
@@ -171,10 +171,10 @@ export default function SheetPdf({ data, curY, curM }) {
       delete next[key];
       const metaOnly = {};
       Object.keys(next).forEach(k => metaOnly[k] = { name: next[k].name, vehicle: next[k].vehicle, url: next[k].url });
-      supabase.from('app_data').upsert({ id: 'pdf_meta', data: metaOnly });
+      supabase.from('app_data').upsert({ id: 'pdf_meta', data: metaOnly }).catch(console.error);
       return next;
     });
-    supabase.storage.from('pdfs').remove([`alam_enterprises/pdfs/${key}.pdf`]);
+    supabase.storage.from('pdfs').remove([`alam_enterprises/pdfs/${key}.pdf`]).catch(console.error);
     toast('PDF Removed');
   };
 

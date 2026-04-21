@@ -19,10 +19,11 @@ export const AppProvider = ({ children }) => {
   const [curY, setCurY] = useState(null);
   const [curM, setCurM] = useState(null);
   const [curVeh, setCurVeh] = useState(null);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   
   // Data state
   const [db, setDb] = useState({});
-  const [syncStatus, setSyncStatus] = useState('synced'); // syncing, synced, error
+  const [syncStatus, setSyncStatus] = useState('syncing'); // syncing, synced, error
   const [toastMsg, setToastMsg] = useState(null);
   const [pdfStore, setPdfStore] = useState({});
 
@@ -37,6 +38,8 @@ export const AppProvider = ({ children }) => {
     setDb(initialDb);
   }, []);
 
+
+
   // Supabase Sync Logic
   useEffect(() => {
     if (!currentUser) return;
@@ -44,7 +47,7 @@ export const AppProvider = ({ children }) => {
     
     // Fetch initial
     const fetchData = async () => {
-      const { data, error } = await supabase.from('app_data').select('data').eq('id', 'ledger').single();
+      const { data, error } = await supabase.from('app_data').select('data').eq('id', 'ledger').maybeSingle();
       if (!error && data) {
         setDb(prev => {
           const next = { ...prev };
@@ -57,8 +60,7 @@ export const AppProvider = ({ children }) => {
           return next;
         });
       }
-      
-      const { data: pdfData } = await supabase.from('app_data').select('data').eq('id', 'pdf_meta').single();
+      const { data: pdfData } = await supabase.from('app_data').select('data').eq('id', 'pdf_meta').maybeSingle();
       if (pdfData?.data) {
         setPdfStore(prev => {
           const next = { ...prev };
@@ -182,6 +184,7 @@ export const AppProvider = ({ children }) => {
   const value = {
     currentUser, login, logout,
     users: USERS,
+    isMobileOpen, setIsMobileOpen,
     db, updateDb, addYear, monthsList: MONTHS, currentYear: CY,
     view, setView,
     curY, goYears,
