@@ -10,7 +10,7 @@ const USERS = [
   { username: 'ALAM', pass: 'ALAM786', name: 'Alam Viewer', role: 'viewer', ini: 'AL' },
 ];
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
 const CY = new Date().getFullYear();
 
 export const AppProvider = ({ children }) => {
